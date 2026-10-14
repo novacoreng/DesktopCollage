@@ -5,26 +5,23 @@ using System.Text;
 
 namespace DesktopCollage;
 
-/// <summary>
-/// Read-only Windows Explorer desktop hierarchy inspection.
-/// Does not reparent windows, send undocumented messages, or alter Explorer.
-/// </summary>
-internal static partial class ShellProbe
+/// <summary>Read-only Explorer window inspection. Never reparents Explorer windows.</summary>
+internal static class ShellProbe
 {
-    [LibraryImport("user32.dll", EntryPoint = "FindWindowW", StringMarshalling = StringMarshalling.Utf16)]
-    private static partial nint FindWindow(string? className, string? windowName);
+    [DllImport("user32.dll", EntryPoint = "FindWindowW", CharSet = CharSet.Unicode)]
+    private static extern nint FindWindow(string? className, string? windowName);
 
-    [LibraryImport("user32.dll", EntryPoint = "FindWindowExW", StringMarshalling = StringMarshalling.Utf16)]
-    private static partial nint FindWindowEx(nint parent, nint after, string? className, string? windowName);
-
-    [LibraryImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool EnumWindows(EnumWindowsProc callback, nint data);
+    [DllImport("user32.dll", EntryPoint = "FindWindowExW", CharSet = CharSet.Unicode)]
+    private static extern nint FindWindowEx(nint parent, nint after, string? className, string? windowName);
 
     private delegate bool EnumWindowsProc(nint hwnd, nint data);
 
-    [LibraryImport("user32.dll", EntryPoint = "GetClassNameW", StringMarshalling = StringMarshalling.Utf16)]
-    private static partial int GetClassName(nint hwnd, StringBuilder name, int maxCount);
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumWindows(EnumWindowsProc callback, nint data);
+
+    [DllImport("user32.dll", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode)]
+    private static extern int GetClassName(nint hwnd, StringBuilder name, int maxCount);
 
     public static string GetReport()
     {
@@ -46,6 +43,6 @@ internal static partial class ShellProbe
                $"WorkerW windows: {workers.Count}{Environment.NewLine}" +
                $"SHELLDLL_DefView host(s): {desktopHosts.Count}{Environment.NewLine}" +
                $"Desktop host handles: {string.Join(", ", desktopHosts)}{Environment.NewLine}" +
-               "This does NOT establish a supported desktop embedding mechanism.";
+               "This does not establish a supported desktop embedding mechanism.";
     }
 }
