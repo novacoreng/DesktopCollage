@@ -37,7 +37,7 @@ internal sealed class CollectionManagerWindow : Window
 
     private static Button Button(string title, RoutedEventHandler handler)
     {
-        var button = new Button { Content = title, Margin = new Thickness(0, 12, 8, 0), Padding = new Thickness(9, 6) };
+        var button = new Button { Content = title, Margin = new Thickness(0, 12, 8, 0), Padding = new Thickness(9, 6, 9, 6) };
         button.Click += handler;
         return button;
     }
@@ -96,7 +96,7 @@ internal sealed class CollectionManagerWindow : Window
         };
         var panel = new StackPanel { Margin = new Thickness(14) };
         var field = new TextBox { Text = initial, Margin = new Thickness(0, 0, 0, 12) };
-        var confirm = new Button { Content = "Save", IsDefault = true, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(18, 5) };
+        var confirm = new Button { Content = "Save", IsDefault = true, HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(18, 5, 18, 5) };
         confirm.Click += (_, _) => dialog.DialogResult = true;
         panel.Children.Add(field);
         panel.Children.Add(confirm);
