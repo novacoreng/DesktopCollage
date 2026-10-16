@@ -7,7 +7,7 @@
 <Border HorizontalAlignment="Left" CornerRadius="13" Background="#B03C526C" Margin="10" Padding="14,9" MouseLeftButtonDown="DragHeader"><TextBlock Text="DEVELOPMENT" Foreground="White" FontWeight="SemiBold"/></Border>
 <StackPanel Grid.Row="1" Margin="17,10,17,5"><TextBlock Foreground="White" TextWrapping="Wrap" Text="Drag the label to move. Drop files and shortcuts to add references."/><ListBox x:Name="Items" Margin="0,12,0,0" Background="Transparent" Foreground="White" BorderThickness="0" MouseDoubleClick="OpenItem"/></StackPanel>
 <DockPanel Grid.Row="2" Margin="12,0,10,10" LastChildFill="False">
-<Button DockPanel.Dock="Left" Content="Inspect Explorer" Click="InspectExplorer" Margin="0,0,8,0" Padding="7,4"/>
+<Button DockPanel.Dock="Left" Content="Collections" Click="OpenCollections" Margin="0,0,8,0" Padding="7,4"/><Button DockPanel.Dock="Left" Content="Inspect Explorer" Click="InspectExplorer" Margin="0,0,8,0" Padding="7,4"/>
 <Button x:Name="CompanionButton" DockPanel.Dock="Left" Content="Desktop mode (test)" Click="ToggleCompanion" Margin="0,0,8,0" Padding="7,4"/>
 <Button DockPanel.Dock="Left" Content="Close" Click="CloseClick" Padding="7,4"/>
 <primitives:Thumb DockPanel.Dock="Right" Width="20" Height="20" Cursor="SizeNWSE" DragDelta="ResizeDelta" ToolTip="Resize collection"><primitives:Thumb.Template><ControlTemplate TargetType="{x:Type primitives:Thumb}"><Border Background="#557D93AB" CornerRadius="4"><TextBlock Text="◢" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="White"/></Border></ControlTemplate></primitives:Thumb.Template></primitives:Thumb>
