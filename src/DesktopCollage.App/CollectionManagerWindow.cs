@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,20 +7,18 @@ namespace DesktopCollage;
 
 internal sealed class CollectionManagerWindow : Window
 {
-    private readonly WorkspaceStore _store = new();
-    private readonly WorkspaceRecord _workspace;
+    private readonly WorkspaceController _controller;
     private readonly ListBox _list = new();
-    private readonly Dictionary<Guid, CollectionWindow> _windows = new();
 
-    public CollectionManagerWindow()
+    public CollectionManagerWindow(WorkspaceController controller)
     {
+        _controller = controller;
         Title = "DesktopCollage Collections";
         Width = 520;
         Height = 390;
         MinWidth = 420;
         MinHeight = 280;
-        WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        _workspace = LoadSafe();
+        WindowStartupLocation = WindowStartupLocation.CenterOwner;
 
         var layout = new DockPanel { Margin = new Thickness(16) };
         var actions = new WrapPanel();
@@ -38,16 +35,6 @@ internal sealed class CollectionManagerWindow : Window
         Refresh();
     }
 
-    private WorkspaceRecord LoadSafe()
-    {
-        try { return _store.Load(); }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
-        {
-            MessageBox.Show(ex.Message, "Workspace could not be loaded");
-            return new WorkspaceRecord();
-        }
-    }
-
     private static Button Button(string title, RoutedEventHandler handler)
     {
         var button = new Button { Content = title, Margin = new Thickness(0, 12, 8, 0), Padding = new Thickness(9, 6) };
@@ -59,15 +46,8 @@ internal sealed class CollectionManagerWindow : Window
     {
         var selectedId = (_list.SelectedItem as CollectionRecord)?.Id;
         _list.ItemsSource = null;
-        _list.ItemsSource = _workspace.Collections.ToArray();
+        _list.ItemsSource = _controller.Workspace.Collections.ToArray();
         _list.SelectedItem = _list.Items.Cast<CollectionRecord>().FirstOrDefault(x => x.Id == selectedId);
-    }
-
-    private void Persist()
-    {
-        try { _store.Save(_workspace); }
-        catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
-        { MessageBox.Show(ex.Message, "Workspace save failed"); }
     }
 
     private void CreateCollection()
@@ -75,11 +55,11 @@ internal sealed class CollectionManagerWindow : Window
         var name = PromptName("Collection name", "New collection");
         if (name is null) return;
         var collection = new CollectionRecord { Name = name };
-        _workspace.Collections.Add(collection);
-        Persist();
+        _controller.Workspace.Collections.Add(collection);
+        _controller.Save();
         Refresh();
         _list.SelectedItem = _list.Items.Cast<CollectionRecord>().FirstOrDefault(x => x.Id == collection.Id);
-        OpenCollection();
+        _controller.Open(collection);
     }
 
     private void RenameCollection()
@@ -88,8 +68,7 @@ internal sealed class CollectionManagerWindow : Window
         var name = PromptName("Rename collection", collection.Name);
         if (name is null) return;
         collection.Name = name;
-        if (_windows.TryGetValue(collection.Id, out var window)) window.UpdateTitle();
-        Persist();
+        _controller.Rename(collection);
         Refresh();
     }
 
@@ -98,32 +77,21 @@ internal sealed class CollectionManagerWindow : Window
         if (_list.SelectedItem is not CollectionRecord collection) return;
         if (MessageBox.Show($"Remove collection '{collection.Name}'? Original files will not be deleted.",
             "Confirm removal", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
-        if (_windows.Remove(collection.Id, out var window)) window.Close();
-        _workspace.Collections.RemoveAll(x => x.Id == collection.Id);
-        Persist();
+        _controller.Delete(collection);
         Refresh();
     }
 
     private void OpenCollection()
     {
-        if (_list.SelectedItem is not CollectionRecord collection) return;
-        if (_windows.TryGetValue(collection.Id, out var existing))
-        {
-            existing.Activate();
-            return;
-        }
-        var window = new CollectionWindow(collection, Persist);
-        _windows[collection.Id] = window;
-        window.Closed += (_, _) => _windows.Remove(collection.Id);
-        window.Show();
+        if (_list.SelectedItem is CollectionRecord collection) _controller.Open(collection);
     }
 
-    private static string? PromptName(string title, string initial)
+    private string? PromptName(string title, string initial)
     {
         var dialog = new Window
         {
-            Title = title, Width = 360, Height = 160,
-            WindowStartupLocation = WindowStartupLocation.CenterScreen,
+            Title = title, Width = 360, Height = 160, Owner = this,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
             ResizeMode = ResizeMode.NoResize
         };
         var panel = new StackPanel { Margin = new Thickness(14) };
