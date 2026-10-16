@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 
 namespace DesktopCollage;
@@ -47,6 +46,14 @@ internal sealed class WorkspaceStore
         {
             WriteIndented = true
         }));
-        File.Move(temporary, _path, true);
+        if (File.Exists(_path))
+        {
+            // Atomic replacement on NTFS, preserving the previous good workspace.
+            File.Replace(temporary, _path, _path + ".bak");
+        }
+        else
+        {
+            File.Move(temporary, _path);
+        }
     }
 }
