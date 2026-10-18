@@ -15,6 +15,7 @@ internal sealed class CollectionRecord
     public double Height { get; set; } = 320;
     public bool PositionLocked { get; set; }
     public bool SizeLocked { get; set; }
+    public bool RestoreOnStartup { get; set; } = true;
     public List<string> References { get; set; } = new();
 }
 
@@ -33,10 +34,32 @@ internal sealed class WorkspaceStore
     public WorkspaceRecord Load()
     {
         if (!File.Exists(_path)) return new WorkspaceRecord();
-        var workspace = JsonSerializer.Deserialize<WorkspaceRecord>(File.ReadAllText(_path))
-            ?? new WorkspaceRecord();
+        try { return Read(_path); }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException)
+        {
+            var backup = _path + ".bak";
+            if (!File.Exists(backup)) throw;
+            // Recovery never overwrites the original file. The user can inspect it later.
+            var recovered = Read(backup);
+            System.Windows.MessageBox.Show(
+                "The workspace could not be loaded. A backup was recovered in memory. " +
+                "The original file remains untouched until you make changes.\n\n" + ex.Message,
+                "DesktopCollage workspace recovery");
+            return recovered;
+        }
+    }
+
+    private static WorkspaceRecord Read(string path)
+    {
+        var workspace = JsonSerializer.Deserialize<WorkspaceRecord>(File.ReadAllText(path))
+            ?? throw new InvalidDataException("Workspace JSON was empty.");
         if (workspace.Version != 1) throw new InvalidDataException("Unsupported workspace version.");
         workspace.Collections ??= new();
+        foreach (var collection in workspace.Collections)
+        {
+            collection.References ??= new();
+            if (collection.Id == Guid.Empty) throw new InvalidDataException("Collection ID missing.");
+        }
         return workspace;
     }
 

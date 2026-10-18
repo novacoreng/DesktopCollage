@@ -40,6 +40,7 @@ public partial class MainWindow : Window
     private void RefreshItems() => Items.ItemsSource = _references.Select(p => new ItemEntry(p, Path.GetFileName(p.TrimEnd(Path.DirectorySeparatorChar)))).ToArray();
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        WorkspaceController.Current.RestoreCollections();
         try {
             if (!File.Exists(_settingsFile)) return;
             var s = JsonSerializer.Deserialize<PrototypeState>(File.ReadAllText(_settingsFile));

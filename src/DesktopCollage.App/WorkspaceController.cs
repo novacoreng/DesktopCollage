@@ -28,6 +28,23 @@ internal sealed class WorkspaceController
         }
     }
 
+    private bool _restored;
+
+    public void RestoreCollections()
+    {
+        if (_restored) return;
+        _restored = true;
+        foreach (var collection in Workspace.Collections)
+        {
+            if (!collection.RestoreOnStartup) continue;
+            try { Open(collection, true); }
+            catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+            {
+                MessageBox.Show(ex.Message, "Could not restore collection");
+            }
+        }
+    }
+
     public void ShowManager(Window owner)
     {
         if (_manager is not null)
@@ -40,7 +57,9 @@ internal sealed class WorkspaceController
         _manager.Show();
     }
 
-    public void Open(CollectionRecord collection)
+    public void Open(CollectionRecord collection) => Open(collection, false);
+
+    private void Open(CollectionRecord collection, bool restoring)
     {
         if (_openWindows.TryGetValue(collection.Id, out var existing))
         {
@@ -49,8 +68,19 @@ internal sealed class WorkspaceController
         }
         var window = new CollectionWindow(collection, Save);
         _openWindows.Add(collection.Id, window);
-        window.Closed += (_, _) => _openWindows.Remove(collection.Id);
+        window.Closed += (_, _) =>
+        {
+            _openWindows.Remove(collection.Id);
+            if (Application.Current.Dispatcher.HasShutdownStarted || Application.Current.Dispatcher.HasShutdownFinished) return;
+            collection.RestoreOnStartup = false;
+            Save();
+        };
         window.Show();
+        if (!restoring)
+        {
+            collection.RestoreOnStartup = true;
+            Save();
+        }
     }
 
     public void Rename(CollectionRecord collection)
