@@ -5,12 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DesktopCollage;
 
-/// <summary>An independent, movable collection window. References never move original files.</summary>
+/// <summary>Movable glass collection. Only references files; never relocates originals.</summary>
 internal sealed class CollectionWindow : Window
 {
     private readonly CollectionRecord _record;
@@ -23,12 +24,12 @@ internal sealed class CollectionWindow : Window
         _record = record;
         _save = save;
         Title = record.Name;
-        Width = Math.Clamp(record.Width, 240, 1600);
-        Height = Math.Clamp(record.Height, 160, 1100);
+        Width = Math.Clamp(record.Width, 280, 1600);
+        Height = Math.Clamp(record.Height, 200, 1100);
         Left = record.Left;
         Top = record.Top;
-        MinWidth = 240;
-        MinHeight = 160;
+        MinWidth = 280;
+        MinHeight = 200;
         WindowStartupLocation = WindowStartupLocation.Manual;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
@@ -38,18 +39,18 @@ internal sealed class CollectionWindow : Window
 
         var border = new Border
         {
-            CornerRadius = new CornerRadius(14),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(100, 255, 255, 255)),
+            CornerRadius = new CornerRadius(20),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(115, 160, 220, 205)),
             BorderThickness = new Thickness(1),
-            Background = new SolidColorBrush(Color.FromArgb(32, 30, 40, 60)),
-            Padding = new Thickness(12)
+            Background = new SolidColorBrush(Color.FromArgb(215, 16, 24, 32)),
+            Padding = new Thickness(14)
         };
         var root = new DockPanel();
         var header = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(195, 55, 75, 100)),
-            CornerRadius = new CornerRadius(10),
-            Padding = new Thickness(12, 8, 12, 8),
+            Background = new SolidColorBrush(Color.FromArgb(105, 38, 77, 74)),
+            CornerRadius = new CornerRadius(12),
+            Padding = new Thickness(14, 10, 14, 10),
             Cursor = Cursors.SizeAll
         };
         header.MouseLeftButtonDown += (_, e) =>
@@ -57,22 +58,47 @@ internal sealed class CollectionWindow : Window
             if (e.LeftButton == MouseButtonState.Pressed) DragMove();
         };
         _heading.Text = record.Name;
+        _heading.FontSize = 15;
         _heading.Foreground = Brushes.White;
         _heading.FontWeight = FontWeights.SemiBold;
         header.Child = _heading;
         DockPanel.SetDock(header, Dock.Top);
         root.Children.Add(header);
 
-        var footer = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-        var close = new Button { Content = "Close", Padding = new Thickness(8, 4, 8, 4), Margin = new Thickness(4) };
+        var footer = new DockPanel { Margin = new Thickness(0, 10, 0, 0), LastChildFill = false };
+        var hint = new TextBlock
+        {
+            Text = "Drop shortcuts, files or folders",
+            Foreground = new SolidColorBrush(Color.FromRgb(147, 229, 182)),
+            VerticalAlignment = VerticalAlignment.Center,
+            FontSize = 11
+        };
+        DockPanel.SetDock(hint, Dock.Left);
+        footer.Children.Add(hint);
+        var close = new Button { Content = "Close", Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(5, 0, 5, 0) };
         close.Click += (_, _) => Close();
+        DockPanel.SetDock(close, Dock.Right);
         footer.Children.Add(close);
+        var grip = new Thumb
+        {
+            Width = 22, Height = 22, Cursor = Cursors.SizeNWSE,
+            Background = new SolidColorBrush(Color.FromArgb(130, 120, 169, 244)),
+            ToolTip = "Resize collection"
+        };
+        grip.DragDelta += (_, e) =>
+        {
+            Width = Math.Max(MinWidth, Width + e.HorizontalChange);
+            Height = Math.Max(MinHeight, Height + e.VerticalChange);
+        };
+        DockPanel.SetDock(grip, Dock.Right);
+        footer.Children.Add(grip);
         DockPanel.SetDock(footer, Dock.Bottom);
         root.Children.Add(footer);
 
         _items.Background = Brushes.Transparent;
         _items.Foreground = Brushes.White;
         _items.BorderThickness = new Thickness(0);
+        _items.Margin = new Thickness(0, 10, 0, 0);
         _items.MouseDoubleClick += OpenItem;
         root.Children.Add(_items);
         border.Child = root;
