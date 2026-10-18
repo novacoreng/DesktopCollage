@@ -15,7 +15,7 @@ namespace DesktopCollage;
 /// <summary>Local-only developer pairing review UI. Not a production security boundary.</summary>
 internal sealed class PairingApprovalWindow : Window
 {
-    private readonly HttpClient _client = new() { BaseAddress = new Uri("http://127.0.0.1:47831") };
+    private HttpClient? _client;
     private readonly ListBox _requests = new();
     private readonly TextBox _code = new();
     private readonly TextBlock _status = new();
@@ -66,8 +66,13 @@ internal sealed class PairingApprovalWindow : Window
         _status.TextWrapping = TextWrapping.Wrap;
         root.Children.Add(_status);
         Content = root;
-        Loaded += async (_, _) => await RefreshAsync();
-        Closed += (_, _) => _client.Dispose();
+        Loaded += async (_, _) =>
+        {
+            try { _client = CompanionHttpClient.Create(); await RefreshAsync(); }
+            catch (Exception ex) when (ex is System.IO.IOException or System.Security.Cryptography.CryptographicException)
+            { _status.Text = ex.Message; }
+        };
+        Closed += (_, _) => _client?.Dispose();
     }
 
     private static Button MakeButton(string title) => new()
@@ -80,6 +85,7 @@ internal sealed class PairingApprovalWindow : Window
 
     private async System.Threading.Tasks.Task RefreshAsync()
     {
+        if (_client is null) return;
         try
         {
             using var response = await _client.GetAsync("/local/pairing/pending");
@@ -105,6 +111,7 @@ internal sealed class PairingApprovalWindow : Window
                 "Approve this local development device? This does not enable remote control.",
                 "Confirm enrollment", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
+        if (_client is null) return;
         try
         {
             if (approve)

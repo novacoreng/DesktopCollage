@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 
-using var http = new HttpClient { BaseAddress = new Uri("http://127.0.0.1:47831") };
+using var http = CompanionTls.Create();
 Console.WriteLine("DesktopCollage local pairing review");
 Console.WriteLine("This tool runs on the Windows computer only.");
 try
