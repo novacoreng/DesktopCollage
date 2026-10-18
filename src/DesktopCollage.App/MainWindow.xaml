@@ -17,6 +17,7 @@
 <DockPanel Grid.Row="2" Margin="0,7,0,0" LastChildFill="False">
 <WrapPanel DockPanel.Dock="Left">
 <Button Content="Collections" Click="OpenCollections"/>
+<Button Content="Pair device" Click="OpenPairing"/>
 <Button Content="Inspect" Click="InspectExplorer"/>
 <Button x:Name="CompanionButton" Content="Desktop mode (test)" Click="ToggleCompanion"/>
 <Button Content="Close" Click="CloseClick"/>
