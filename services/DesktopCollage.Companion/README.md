@@ -1,16 +1,19 @@
-# DesktopCollage Windows companion service
+# DesktopCollage companion service
 
-An isolated ASP.NET Core (.NET 10) foundation for the planned Android-to-Windows connection.
+Local-only development foundation for Android pairing. Run with:
 
-## Run
 ```powershell
 dotnet run --project services/DesktopCollage.Companion
 ```
 
 Local endpoints:
-- `http://127.0.0.1:47831/health`
-- `http://127.0.0.1:47831/api/v1/capabilities`
+- GET /health
+- GET /api/v1/capabilities
+- POST /local/pairing/start with JSON `{"name":"My Android phone"}`
+- POST /local/pairing/approve with JSON `{"requestId":"...","code":"..."}`
+- GET /local/devices
+- DELETE /local/devices/{id}
 
-The service binds to loopback only. No remote control endpoints, authentication, or Android pairing are enabled yet. It is not ready for LAN exposure. Do not change the bind address to 0.0.0.0 until transport security, pairing, authentication, device revocation and rate limiting have been implemented and tested.
+All pairing management endpoints are bound to 127.0.0.1 only. They are NOT remotely accessible from Android. They are not a production pairing protocol. A locally running process can request enrollment and approve it, so OS-level approval UI and authenticated remote transport are still required before any LAN exposure. Do not expose these endpoints on a public or LAN interface.
 
-Future phases: QR pairing with Windows confirmation, pinned device identities, authenticated commands, approved application catalog, optional LAN discovery, Android UI.
+Tokens are generated using a cryptographic RNG and stored as hashes in %LOCALAPPDATA%/DesktopCollage/paired-devices-v1.json. Device revocation removes the stored record. Tokens do not authorize any commands yet.
