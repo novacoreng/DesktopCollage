@@ -13,6 +13,8 @@ internal sealed class CollectionRecord
     public double Top { get; set; } = 100;
     public double Width { get; set; } = 460;
     public double Height { get; set; } = 320;
+    public bool PositionLocked { get; set; }
+    public bool SizeLocked { get; set; }
     public List<string> References { get; set; } = new();
 }
 

@@ -19,6 +19,9 @@ internal sealed class CollectionWindow : Window
     private readonly Action _save;
     private readonly ListBox _items = new();
     private readonly TextBlock _heading = new();
+    private readonly Thumb _resizeGrip = new();
+    private readonly Button _positionLockButton = new();
+    private readonly Button _sizeLockButton = new();
 
     public CollectionWindow(CollectionRecord record, Action save)
     {
@@ -56,7 +59,7 @@ internal sealed class CollectionWindow : Window
         };
         header.MouseLeftButtonDown += (_, e) =>
         {
-            if (e.LeftButton == MouseButtonState.Pressed) DragMove();
+            if (!_record.PositionLocked && e.LeftButton == MouseButtonState.Pressed) DragMove();
         };
         _heading.Text = record.Name;
         _heading.FontSize = 15;
@@ -76,18 +79,49 @@ internal sealed class CollectionWindow : Window
         };
         DockPanel.SetDock(hint, Dock.Left);
         footer.Children.Add(hint);
+        _positionLockButton.Content = "Position";
+        _positionLockButton.ToolTip = "Toggle position lock";
+        _positionLockButton.Padding = new Thickness(8, 4, 8, 4);
+        _positionLockButton.Margin = new Thickness(4);
+        _positionLockButton.Click += (_, _) =>
+        {
+            _record.PositionLocked = !_record.PositionLocked;
+            UpdateLocks();
+            _save();
+        };
+        footer.Children.Add(_positionLockButton);
+
+        _sizeLockButton.Content = "Size";
+        _sizeLockButton.ToolTip = "Toggle size lock";
+        _sizeLockButton.Padding = new Thickness(8, 4, 8, 4);
+        _sizeLockButton.Margin = new Thickness(4);
+        _sizeLockButton.Click += (_, _) =>
+        {
+            _record.SizeLocked = !_record.SizeLocked;
+            UpdateLocks();
+            _save();
+        };
+        footer.Children.Add(_sizeLockButton);
+
         var close = new Button { Content = "Close", Padding = new Thickness(10, 5, 10, 5), Margin = new Thickness(5, 0, 5, 0) };
         close.Click += (_, _) => Close();
         DockPanel.SetDock(close, Dock.Right);
         footer.Children.Add(close);
-        var grip = new Thumb
+        var grip = _resizeGrip;
+        grip.Width = 22;
+        grip.Height = 22;
+        grip.Cursor = Cursors.SizeNWSE;
+        grip.Background = new SolidColorBrush(Color.FromArgb(130, 120, 169, 244));
+        grip.ToolTip = "Resize collection";
+        /*var grip = new Thumb
         {
             Width = 22, Height = 22, Cursor = Cursors.SizeNWSE,
             Background = new SolidColorBrush(Color.FromArgb(130, 120, 169, 244)),
             ToolTip = "Resize collection"
-        };
+        };*/
         grip.DragDelta += (_, e) =>
         {
+            if (_record.SizeLocked) return;
             Width = Math.Max(MinWidth, Width + e.HorizontalChange);
             Height = Math.Max(MinHeight, Height + e.VerticalChange);
         };
@@ -142,12 +176,21 @@ internal sealed class CollectionWindow : Window
         border.Child = root;
         Content = border;
         Refresh();
+        UpdateLocks();
 
         DragOver += OnDragOver;
         Drop += OnDrop;
         LocationChanged += (_, _) => SaveGeometry();
         SizeChanged += (_, _) => SaveGeometry();
         Closing += OnClosing;
+    }
+
+    private void UpdateLocks()
+    {
+        _positionLockButton.Content = _record.PositionLocked ? "Position locked" : "Lock position";
+        _sizeLockButton.Content = _record.SizeLocked ? "Size locked" : "Lock size";
+        _resizeGrip.IsEnabled = !_record.SizeLocked;
+        _resizeGrip.Visibility = _record.SizeLocked ? Visibility.Collapsed : Visibility.Visible;
     }
 
     public void UpdateTitle()
