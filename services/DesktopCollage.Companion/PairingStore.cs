@@ -80,6 +80,18 @@ internal sealed class PairingStore
         }).ToArray();
     }
 
+    public bool Authenticate(string deviceId, string token)
+    {
+        if (string.IsNullOrWhiteSpace(deviceId) || string.IsNullOrWhiteSpace(token)) return false;
+        lock (_gate)
+        {
+            if (!_devices.TryGetValue(deviceId, out var device)) return false;
+            var supplied = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token));
+            var expected = Convert.FromHexString(device.TokenHash);
+            return CryptographicOperations.FixedTimeEquals(supplied, expected);
+        }
+    }
+
     public bool Revoke(string id)
     {
         lock (_gate)

@@ -45,6 +45,11 @@ app.MapGet("/local/pairing/pending", (PairingStore store) => Results.Ok(store.Pe
 app.MapDelete("/local/pairing/pending/{id}", (string id, PairingStore store) =>
     store.Reject(id) ? Results.NoContent() : Results.NotFound());
 
+app.MapPost("/local/auth/verify", (VerifyDeviceRequest request, PairingStore store) =>
+    store.Authenticate(request.DeviceId, request.Token)
+        ? Results.Ok(new { authenticated = true, remoteControlEnabled = false })
+        : Results.Unauthorized());
+
 app.MapGet("/local/devices", (PairingStore store) => Results.Ok(store.List()));
 app.MapDelete("/local/devices/{id}", (string id, PairingStore store) =>
     store.Revoke(id) ? Results.NoContent() : Results.NotFound());
@@ -53,3 +58,4 @@ app.Run();
 
 internal sealed record StartPairRequest(string Name);
 internal sealed record ApprovePairRequest(string RequestId, string Code);
+internal sealed record VerifyDeviceRequest(string DeviceId, string Token);
