@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -95,6 +96,43 @@ internal sealed class CollectionWindow : Window
         DockPanel.SetDock(footer, Dock.Bottom);
         root.Children.Add(footer);
 
+        var tileStyle = new Style(typeof(ListBoxItem));
+        tileStyle.Setters.Add(new Setter(FrameworkElement.WidthProperty, 98.0));
+        tileStyle.Setters.Add(new Setter(FrameworkElement.HeightProperty, 104.0));
+        tileStyle.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(5)));
+        tileStyle.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
+        tileStyle.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+        _items.ItemContainerStyle = tileStyle;
+
+        var tile = new FrameworkElementFactory(typeof(StackPanel));
+        tile.SetValue(StackPanel.OrientationProperty, Orientation.Vertical);
+        tile.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+
+        var icon = new FrameworkElementFactory(typeof(Image));
+        icon.SetValue(FrameworkElement.WidthProperty, 48.0);
+        icon.SetValue(FrameworkElement.HeightProperty, 48.0);
+        icon.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 6, 0, 6));
+        icon.SetBinding(Image.SourceProperty, new Binding(nameof(ItemEntry.Path))
+        {
+            Converter = new ShellIconConverter()
+        });
+        tile.AppendChild(icon);
+
+        var label = new FrameworkElementFactory(typeof(TextBlock));
+        label.SetBinding(TextBlock.TextProperty, new Binding(nameof(ItemEntry.Name)));
+        label.SetValue(TextBlock.TextAlignmentProperty, TextAlignment.Center);
+        label.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+        label.SetValue(TextBlock.TextTrimmingProperty, TextTrimming.CharacterEllipsis);
+        label.SetValue(FrameworkElement.MaxHeightProperty, 40.0);
+        label.SetValue(TextBlock.ForegroundProperty, Brushes.White);
+        label.SetValue(TextBlock.FontSizeProperty, 11.0);
+        tile.AppendChild(label);
+        _items.ItemTemplate = new DataTemplate { VisualTree = tile };
+
+        var wrap = new FrameworkElementFactory(typeof(WrapPanel));
+        wrap.SetValue(WrapPanel.IsItemsHostProperty, true);
+        _items.ItemsPanel = new ItemsPanelTemplate(wrap);
+        _items.HorizontalContentAlignment = HorizontalAlignment.Center;
         _items.Background = Brushes.Transparent;
         _items.Foreground = Brushes.White;
         _items.BorderThickness = new Thickness(0);
