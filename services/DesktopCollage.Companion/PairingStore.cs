@@ -51,6 +51,27 @@ internal sealed class PairingStore
         }
     }
 
+    public IReadOnlyList<object> Pending()
+    {
+        lock (_gate)
+        {
+            Cleanup();
+            return _pending.Select(p => (object)new
+            {
+                requestId = p.Key, name = p.Value.Name, expiresAt = p.Value.ExpiresAt
+            }).ToArray();
+        }
+    }
+
+    public bool Reject(string requestId)
+    {
+        lock (_gate)
+        {
+            Cleanup();
+            return _pending.Remove(requestId);
+        }
+    }
+
     public IReadOnlyList<object> List()
     {
         lock (_gate) return _devices.Values.Select(d => (object)new

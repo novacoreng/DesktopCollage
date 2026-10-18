@@ -41,6 +41,10 @@ app.MapPost("/local/pairing/approve", (ApprovePairRequest request, PairingStore 
     return result is null ? Results.BadRequest(new { error = "Invalid or expired request." }) : Results.Ok(result);
 });
 
+app.MapGet("/local/pairing/pending", (PairingStore store) => Results.Ok(store.Pending()));
+app.MapDelete("/local/pairing/pending/{id}", (string id, PairingStore store) =>
+    store.Reject(id) ? Results.NoContent() : Results.NotFound());
+
 app.MapGet("/local/devices", (PairingStore store) => Results.Ok(store.List()));
 app.MapDelete("/local/devices/{id}", (string id, PairingStore store) =>
     store.Revoke(id) ? Results.NoContent() : Results.NotFound());
