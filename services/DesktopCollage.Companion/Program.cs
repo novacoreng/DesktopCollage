@@ -1,10 +1,16 @@
 using DesktopCollage.Companion;
+using System.Net;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Safe initial baseline: no network exposure and no remote command execution.
-builder.WebHost.UseUrls("http://127.0.0.1:47831");
+// HTTPS is loopback-only until mutual device authorization and Windows consent are complete.
+var transportCertificate = TransportIdentity.LoadOrCreate();
+builder.WebHost.ConfigureKestrel(server =>
+{
+    server.Listen(IPAddress.Loopback, 47832, endpoint => endpoint.UseHttps(transportCertificate));
+});
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
@@ -16,7 +22,9 @@ app.MapGet("/health", () => Results.Ok(new
     service = "DesktopCollage.Companion",
     status = "ready",
     protocolVersion = 1,
-    remoteAccessEnabled = false
+    remoteAccessEnabled = false,
+    transport = "https-loopback",
+    certificateFingerprintSha256 = TransportIdentity.Fingerprint(transportCertificate)
 }));
 
 app.MapGet("/api/v1/capabilities", () => Results.Ok(new
